@@ -24,22 +24,23 @@ func main() {
 	// matrix := NewMatrix(27, 7)
 
 	// initialize the matrix with only 0s and 2s as characters, so that it spells out "FAULI"
-	matrix := [][]rune{
+	matrix := [][]int{
 		//2    2    2    4	  5    6    7    8    9    20   22   22   22   24   25   26   27   28   29   20   22   22   22   24   25   26   27
-		{'0', '2', '2', '2', '2', '2', '0', '2', '2', '2', '2', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'0', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'0', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'0', '2', '2', '2', '2', '0', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'0', '2', '0', '0', '0', '0', '0', '2', '2', '2', '2', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'0', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '2', '0', '2', '0', '0', '0', '0', '0', '2', '0'},
-		{'1', '2', '1', '1', '1', '1', '1', '2', '1', '1', '1', '2', '1', '2', '2', '2', '2', '2', '1', '2', '2', '2', '2', '2', '1', '2', '1'},
+		{0, 5, 5, 5, 5, 5, 0, 5, 5, 5, 5, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{0, 5, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{0, 5, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{0, 5, 5, 5, 5, 0, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{0, 5, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{0, 5, 0, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 5, 0, 5, 0, 0, 0, 0, 0, 5, 0},
+		{1, 5, 1, 1, 1, 1, 1, 5, 1, 1, 1, 5, 1, 5, 5, 5, 5, 5, 1, 5, 5, 5, 5, 5, 1, 5, 1},
 	}
 
 	// print the matrix
 	PrintMatrix(matrix)
 
-	// initialize a date with the first of the year of the github activity year
-	date := time.Date(GITHUB_ACTIVTY_YEAR, time.January, 1, 0, 0, 0, 0, time.UTC)
+	// initialize a date with the second of the year of the github activity year
+	// TODO: Fauli: It should actially just be the first monday of the year
+	date := time.Date(GITHUB_ACTIVTY_YEAR, time.January, 5, 0, 0, 0, 0, time.UTC)
 
 	// Clone the git repository
 	r, err := git.CloneGitRepo(GITHUB_REPO_URL)
@@ -50,14 +51,15 @@ func main() {
 	// to make the github activity matrix, we need to transpose the matrix
 	for i := 0; i < len(matrix[0]); i++ {
 		for j := 0; j < len(matrix); j++ {
-			// print the date in the format "2006-01-02"
-			fmt.Print(date.Format("2006-01-02: "))
-			fmt.Print(string(matrix[j][i]))
-			fmt.Print(", ")
+			// create a github activity on the day of the year with the intensity of the matrix value
+			err = git.CreateActiviyOnDayOfYear(r, date, int(matrix[j][i]))
+			if err != nil {
+				panic(err)
+			}
+
 			// increase the github activity date by one day
 			date = date.AddDate(0, 0, 1)
 
-			git.CreateActiviyOnDayOfYear(r, date, int(matrix[j][i]))
 		}
 		fmt.Println()
 	}
@@ -65,30 +67,36 @@ func main() {
 }
 
 // TODO: Fauli:  This function should take a string and return a matrix that spells out the string
-func StringToMatrix(s string) [][]rune {
+func StringToMatrix(s string) [][]int {
 	return nil
 }
 
 // NewMatrix creates a new matrix with the given number of rows and columns
-func NewMatrix(rows, cols int) [][]rune {
-	matrix := make([][]rune, rows)
+func NewMatrix(rows, cols int) [][]int {
+	matrix := make([][]int, rows)
 	for i := range matrix {
-		matrix[i] = make([]rune, cols)
+		matrix[i] = make([]int, cols)
 	}
 	return matrix
 }
 
 // PrintMatrix prints the matrix to the console
-func PrintMatrix(matrix [][]rune) {
+func PrintMatrix(matrix [][]int) {
 	for _, row := range matrix {
 		for _, cell := range row {
 			switch cell {
-			case '0':
+			case 0:
 				fmt.Print(" ")
-			case '2':
-				fmt.Print("█")
-			case '1':
+			case 1:
 				fmt.Print("░")
+			case 2:
+				fmt.Print("▒")
+			case 3:
+				fmt.Print("▓")
+			case 4:
+				fmt.Print("█")
+			case 5:
+				fmt.Print("█")
 			}
 		}
 		fmt.Println()
